@@ -147,13 +147,23 @@ class BatchProductUploader
 	public function createSinglePost($content, $category)
 	{
 		$currentUser = wp_get_current_user();
-		$contentParts = explode('. ', $content);
+		$contentParts = explode(PHP_EOL, $content);
 		$firstLine = $contentParts[0];
 		if(strlen($firstLine) > 60)
 		{
-			$postTitle = substr($firstLine, 0, 60);
+			$contentParts1 = explode('.', $firstLine);
+			$firstLine1 = $contentParts1[0];
+			if(strlen($firstLine1) > 60)
+			{
+				$postTitle = substr($firstLine1, 0, 60);
+			}
+			else
+			{
+				$postTitle = $firstLine1;
+			}
 		}
-		else {
+		else
+		{
 			$postTitle = $firstLine;
 		}
 		$post = array(
