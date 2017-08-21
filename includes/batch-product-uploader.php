@@ -52,6 +52,16 @@ class BatchProductUploader
 				'name' => 'Site Post',
 				'description' => 'Post this item on your Wordpress website',
 				'slug' => 'site-post'
+			],
+			'original' => [
+				'name' => 'Original',
+				'description' => 'Original post',
+				'slug' => 'site-post'
+			],
+			'non-original' => [
+				'name' => 'Non Original',
+				'description' => 'Non original post',
+				'slug' => 'site-post'
 			]
 		];
 	}
@@ -83,6 +93,12 @@ class BatchProductUploader
 
 	public function batchProductUploadPage()
 	{
+		$args = array(
+			'posts_per_page' => -1,
+			'post_type' => 'product',
+			'post_status' => 'publish'
+		);
+		$posts = get_posts( $args );
 		ob_start();
 		include $this->templatesPath.'batch-product-uploader.php';
 		$code = ob_get_clean();
@@ -103,7 +119,8 @@ class BatchProductUploader
 	{
 		$uploadDir = wp_upload_dir(date("Y/m"));
 		$uploadPath = $uploadDir['path'];
-		$targetFilePath = $uploadPath.'/'.'batchUpload-'.time().'.zip';
+		$filename = explode('.', $_FILES["file"]["name"])[0];
+		$targetFilePath = $uploadPath.'/'.$filename.'-'.time().'.zip';
 		move_uploaded_file($_FILES["file"]["tmp_name"], $targetFilePath);
 		$filetype = wp_check_filetype( basename( $targetFilePath ), null );
 		$attachment = array(

@@ -14,6 +14,18 @@ jQuery(document).ready(function($)
       }
     });
   });
+  $('#title').change(function()
+  {
+    var val = $(this).val();
+    if(val == 'custom-title')
+    {
+      $('#custom-title-container').css('display', 'block');
+    }
+    else
+    {
+      $('#custom-title-container').css('display', 'none');
+    }
+  });
   $('#postzip-submit').click(function()
   {
     var selected = $("input[type='radio'][name='category']:checked");
@@ -26,6 +38,10 @@ jQuery(document).ready(function($)
       url: ajax_object.ajaxurl,
       data: {
         action: 'create_posts_batch',
+        parent: $('#parent').val(),
+        postType: $('#type').val(),
+        title: $('#title').val(),
+        customTitle: $('#custom-title').val(),
         category: selectedCategory,
         attachId: $('#attachment-id').val()
       },
