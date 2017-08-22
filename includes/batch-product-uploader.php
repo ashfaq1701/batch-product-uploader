@@ -4,6 +4,7 @@ class BatchProductUploader
 {
 	private static $instance = null;
 	private static $categories = [];
+	private static $tags = [];
 
 	public static function getInstance()
 	{
@@ -14,7 +15,9 @@ class BatchProductUploader
 	public static function activatePlugin()
 	{
 		self::$categories = self::createCategories();
+		self::$tags = self::createTags();
 		self::addWoocommerceCategories();
+		self::addWoocommerceTags();
 	}
 
 	public function __construct()
@@ -27,6 +30,7 @@ class BatchProductUploader
 		$this->templatesPath = $this->pluginPath.'templates/';
 
 		self::$categories = self::createCategories();
+		self::$tags = self::createTags();
 
 		add_action('admin_enqueue_scripts', array($this, 'enqueueScripts'), 10);
 		add_action('admin_enqueue_scripts', array($this, 'enqueueStyles'), 10);
@@ -52,16 +56,22 @@ class BatchProductUploader
 				'name' => 'Site Post',
 				'description' => 'Post this item on your Wordpress website',
 				'slug' => 'site-post'
-			],
+			]
+		];
+	}
+
+	public static function createTags()
+	{
+		return [
 			'original' => [
 				'name' => 'Original',
-				'description' => 'Original post',
-				'slug' => 'site-post'
+				'description' => 'Original Product',
+				'slug' => 'original-product'
 			],
 			'non-original' => [
 				'name' => 'Non Original',
-				'description' => 'Non original post',
-				'slug' => 'site-post'
+				'description' => 'Non original product',
+				'slug' => 'non-original-product'
 			]
 		];
 	}
@@ -115,6 +125,16 @@ class BatchProductUploader
 		}
 	}
 
+	public static function addWoocommerceTags()
+	{
+		foreach (self::$tags as $key => $item) {
+			$term = wp_insert_term( $item['name'], 'post_tag', [
+				'description'=> $item['description'],
+				'slug' => $item['slug']
+			]);
+		}
+	}
+
 	public function uploadPostsZipFile()
 	{
 		$uploadDir = wp_upload_dir(date("Y/m"));
@@ -139,9 +159,24 @@ class BatchProductUploader
 	{
 		$attachId = $_POST['attachId'];
 		$category = $_POST['category'];
+		$type = $_POST['postType'];
 		$categoryName = self::$categories[$category]['name'];
+		$typeName = self::$tags[$type]['name'];
+		$parent = $_POST['parent'];
 		$attachedFile = get_attached_file($attachId);
 		$pathInfo = pathinfo($attachedFile);
+		$title = $_POST['title'];
+		$customTitle = null;
+		if($title == 'file-name')
+		{
+			$customTitleParts = explode('-', $pathInfo['filename']);
+			unset($customTitleParts[count($customTitleParts) - 1]);
+			$customTitle = implode('-', $customTitleParts);
+		}
+		else if($title == 'custom-title')
+		{
+			$customTitle = $_POST['customTitle'];
+		}
 		$zip = new ZipArchive;
 		$targetDir = '';
 		if ($zip->open($attachedFile) === true) {
@@ -149,9 +184,11 @@ class BatchProductUploader
 			mkdir($targetDir);
 			$zip->extractTo($targetDir);
 			$zip->close();
+			$counter = 0;
 			foreach(glob($targetDir.'/*.*') as $file) {
+				$counter++;
 				$fileContent = file_get_contents($file);
-				$this->createSinglePost($fileContent, $categoryName);
+				$this->createSinglePost($fileContent, $categoryName, $typeName, $title, $parent, $customTitle, $counter);
 			}
 			echo json_encode(['status' => 'Successfully imported all posts']);
 		}
@@ -161,27 +198,34 @@ class BatchProductUploader
 		wp_die();
 	}
 
-	public function createSinglePost($content, $category)
+	public function createSinglePost($content, $category, $type, $title, $parent = 0, $customTitle = null, $counter = null)
 	{
 		$currentUser = wp_get_current_user();
-		$contentParts = explode(PHP_EOL, $content);
-		$firstLine = $contentParts[0];
-		if(strlen($firstLine) > 60)
+		if($title == 'first-line')
 		{
-			$contentParts1 = explode('.', $firstLine);
-			$firstLine1 = $contentParts1[0];
-			if(strlen($firstLine1) > 60)
+			$contentParts = explode(PHP_EOL, $content);
+			$firstLine = $contentParts[0];
+			if(strlen($firstLine) > 60)
 			{
-				$postTitle = substr($firstLine1, 0, 60);
+				$contentParts1 = explode('.', $firstLine);
+				$firstLine1 = $contentParts1[0];
+				if(strlen($firstLine1) > 60)
+				{
+					$postTitle = substr($firstLine1, 0, 60);
+				}
+				else
+				{
+					$postTitle = $firstLine1;
+				}
 			}
 			else
 			{
-				$postTitle = $firstLine1;
+				$postTitle = $firstLine;
 			}
 		}
 		else
 		{
-			$postTitle = $firstLine;
+			$postTitle = $customTitle.'-'.$counter;
 		}
 		$post = array(
     	'post_author' => $currentUser->ID,
@@ -191,9 +235,21 @@ class BatchProductUploader
     	'post_parent' => '',
     	'post_type' => "product",
 		);
+		if($parent != 0)
+		{
+			$post['post_parent'] = $parent;
+		}
+		if($type == 'Original')
+		{
+			$post['meta_input'] = [
+				'_stock' => 1,
+				'_manage_stock' => 'yes'
+			];
+		}
 		$postId = wp_insert_post( $post, $wp_error );
 		if($postId) {
 			wp_set_object_terms( $postId, $category, 'product_cat' );
+			wp_set_object_terms( $postId, $type, 'product_tag' );
 		}
 	}
 }

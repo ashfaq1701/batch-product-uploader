@@ -2,3 +2,8 @@
 {
   padding-bottom: 15px;
 }
+
+.hidden.woocommerce_options_panel, .hidden.wc-metaboxes-wrapper
+{
+  display: block;
+}
