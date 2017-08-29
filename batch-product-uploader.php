@@ -10,10 +10,13 @@
   License: MIT
 **/
 
-if (in_array( 'woocommerce/woocommerce.php', apply_filters( 'active_plugins', get_option( 'active_plugins' )))) {
-  require_once 'includes/batch-product-uploader.php';
-  register_activation_hook( __FILE__, array('BatchProductUploader', 'activatePlugin'));
-  add_action('plugins_loaded', array( 'BatchProductUploader', 'getInstance' ));
-}
+require_once 'includes/BatchProductUploader.php';
+require_once 'includes/BatchProductUploaderSettings.php';
+require_once 'includes/BatchProductUploaderContentCopy.php';
+register_activation_hook( __FILE__, array('BatchProductUploader', 'activatePlugin'));
+//register_deactivation_hook(__FILE__, array('BatchProductUploader', 'deactivatePlugin'));
+add_action('plugins_loaded', array( 'BatchProductUploader', 'getInstance' ));
+add_action('plugins_loaded', array( 'BatchProductUploaderSettings', 'getInstance' ));
+add_action('plugins_loaded', array( 'BatchProductUploaderContentCopy', 'getInstance' ));
 
 ?>

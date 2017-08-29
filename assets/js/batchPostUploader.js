@@ -37,7 +37,7 @@ jQuery(document).ready(function($)
       type: 'POST',
       url: ajax_object.ajaxurl,
       data: {
-        action: 'create_posts_batch',
+        action: 'create_products_batch_woo',
         parent: $('#parent').val(),
         postType: $('#type').val(),
         title: $('#title').val(),

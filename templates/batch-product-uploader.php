@@ -2,7 +2,7 @@
   <div class="alert alert-success" id="batch-post-alert-success" style="display: none">
 
   </div>
-  <div class="alert alert-danger" id="batch-post-alert-success" style="display: none">
+  <div class="alert alert-danger" id="batch-post-alert-error" style="display: none">
 
   </div>
   <h1>Batch Post Upload</h1>
